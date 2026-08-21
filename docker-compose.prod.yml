@@ -1,0 +1,70 @@
+# Deploy em produção no seu servidor Hetzner (Docker).
+# Usage:
+#   1. Crie um arquivo .env.prod com as variáveis abaixo (não commite segredos).
+#   2. docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   3. Aponte seu proxy reverso (Traefik/Nginx) para o container na porta 3000.
+
+services:
+  db:
+    image: postgres:16
+    container_name: lsitapresente-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: app_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - appnet
+
+  app:
+    build:
+      context: .
+      args:
+        # Necessário em build-time (Next.js inlining de NEXT_PUBLIC_*)
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    container_name: lsitapresente-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres}@db:5432/app_db
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      # E-mail (deixe vazio para o fallback de dev: link no console)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      MAIL_FROM: ${MAIL_FROM:-Lista de Presentes <no-reply@exemplo.com.br>}
+    volumes:
+      # Uploads persistem aqui (mesmo modelo do seu servidor atual)
+      - uploads:/app/public/uploads
+    expose:
+      - "3000"
+    # Exemplo se você usa Traefik (ajuste o host e o network externo):
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.lsitapresente.rule=Host(`seu-dominio.com`)"
+    #   - "traefik.http.services.lsitapresente.loadbalancer.server.port=3000"
+    networks:
+      - appnet
+      - proxy
+
+networks:
+  appnet:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}
+
+volumes:
+  pgdata:
+  uploads:
