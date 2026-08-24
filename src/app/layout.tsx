@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "Lista de Presentes · Casa Nova",
   description:
     "Estamos começando uma nova fase juntos e queremos compartilhar esse momento especial com você.",
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♥</text></svg>",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
