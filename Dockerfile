@@ -26,6 +26,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/src ./src
 COPY drizzle.config.json /app/drizzle.config.json
 
 # Uploads de imagens persistem num volume montado em /app/public/uploads
