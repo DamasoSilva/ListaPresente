@@ -76,7 +76,6 @@ export function ProductForm({
         return;
       }
       router.push("/admin/produtos");
-      router.refresh();
     });
   };
 
