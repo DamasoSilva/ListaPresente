@@ -18,7 +18,8 @@ export async function POST(req: Request) {
     }
     await setSessionCookie(result.token);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error("LOGIN_ERROR", e);
     return NextResponse.json(
       { error: "Erro interno. Tente novamente." },
       { status: 500 }
